@@ -4,7 +4,7 @@ from model_calculator import Model, ChinchillaConstants, total_flops
 from utils import sf, params_from_loss_and_tokens, add_coefficients_to_parser
 
 
-def calculate_compute_optimal_model(model: Model, T) -> Model:
+def calculate_compute_optimal_model(model: Model, T: int) -> Model:
     """
     For a given Model (model) and inference tokens (T), this function
     computes the optimal model that achieves the same quality (model.loss),
@@ -13,12 +13,12 @@ def calculate_compute_optimal_model(model: Model, T) -> Model:
     the input and returned Models to find the overall compute savings.
     Arguments:
         model: Model object
-        T = Number of inference tokens
+        T: Number of inference tokens
     Returns:
         A new Model object, representing the optimal model accounting for training
         and inference compute.
-
     """
+
     D_opt = newton(
         model.compute_optimal_train_tokens,
         1e8,
@@ -31,7 +31,7 @@ def calculate_compute_optimal_model(model: Model, T) -> Model:
     approximation_error = model.compute_optimal_train_tokens(D_opt, T, model.loss)
     assert (
         approximation_error < 1e-10
-    ), "Approximation failure: Could not approximate training tokens for given T and Q."
+    ), f"Approximation failure: Could not approximate training tokens for given Inference demand ({T}) and Loss {model.loss}."
     N_opt = params_from_loss_and_tokens(model.constants, model.loss, D_opt)
     compute_optimal_model = Model(
         chinchilla_style=False,
@@ -49,12 +49,12 @@ def run(argv=None):
     """
     parser = argparse.ArgumentParser(
         description="""
-                                     Calculate the compute-optimal (minimum FLOPs) way over a model's lifetime to train and run inference on a model of a certain quality
-                                     and given inference demand. You provide the quality of model (--loss) you wish to train, and how much
-                                     inference demand you expect (--inference_tokens), and this script will tell you (based on the Chinchilla scaling laws)
-                                     how large to make your model and how long to train it. 
-                                     Use chinchilla.py to calculate loss values for various model sizes, data lengths, or compute budgets.
-                                     """
+            Calculate the compute-optimal (minimum FLOPs) way over a model's lifetime to train and run inference on a model of a certain quality
+            and given inference demand. You provide the quality of model (--loss) you wish to train, and how much
+            inference demand you expect (--inference_tokens), and this script will tell you (based on the Chinchilla scaling laws)
+            how large to make your model and how long to train it.
+            Use chinchilla.py to calculate loss values for various model sizes, data lengths, or compute budgets.
+            """
     )
 
     # Arguments
@@ -113,7 +113,7 @@ def run(argv=None):
         f"The Compute-Optimal model should be trained on {round(100 * optimal_model.train_tokens/chinchilla_model.train_tokens, 2)}% of the tokens of an equal-quality Chinchilla-style model."
     )
     print(
-        f"The Compute-Optimal model should cost {round(100 * total_flops_opt/total_flops_chinchilla, 2)}% of an equal-quality Chinchilla-style model."
+        f"The Compute-Optimal model should require {round(100 * total_flops_opt/total_flops_chinchilla, 2)}% of the FLOPs of an equal-quality Chinchilla-style model."
     )
 
 

@@ -1,4 +1,3 @@
-import numpy as np
 import argparse
 from utils import (
     ChinchillaConstants,
@@ -15,12 +14,9 @@ from utils import (
     tokens_from_compute_and_params,
     chinchilla_params_from_loss,
     chinchilla_tokens_from_loss,
-    params_from_loss_and_tokens,
     sf,
     add_coefficients_to_parser,
 )
-
-from argparse import ArgumentParser
 
 
 class Model:
@@ -164,14 +160,13 @@ def run(argv=None):
     """
     Calculate the properties of a model given some of its attributes.
     """
-    default_constants = ChinchillaConstants()
     parser = argparse.ArgumentParser(
         description="""
-                                    Calculate the properties of a model given some of its attributes. 
-                                    If your model is Chinchilla-optimal (--chinchilla), provide one of {loss, model, data, compute}. 
+                                    Calculate the properties of a model given some of its attributes.
+                                    If your model is Chinchilla-optimal (--chinchilla), provide one of {loss, model, data, compute}.
                                     Otherwise, provide two of Compute Budget, model parameters, and training tokens.
                                     If you provide the inference tokens you wish to run the model on,
-                                    this script also computes the total FLOPs to run the model across training + inference. 
+                                    this script also computes the total FLOPs to run the model across training + inference.
                                      """
     )
     # Provide some details of the model configuration

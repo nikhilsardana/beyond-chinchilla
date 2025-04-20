@@ -11,7 +11,7 @@ class ChinchillaConstants:
     Class for Chinchilla coefficients/constants
     Defaults to constants from Chinchilla paper (law 3)
     In practice, these need to be adjusted to your dataset.
-    See huber_loss.py for how to find constants after you have collected empirical data.
+    See huber_optimize.py for how to find constants after you have collected empirical data.
     """
 
     def __init__(self, alpha=0.336, beta=0.283, A=406.4, B=410.7, E=1.69):
@@ -164,6 +164,10 @@ def loss_from_params_and_data(cc: ChinchillaConstants, N, D):
 
 
 def add_coefficients_to_parser(parser: ArgumentParser):
+    """
+    Add Chinchilla coefficients to parser.
+    Placed in utils.py because it is common to many files.
+    """
     default_constants = ChinchillaConstants()
     parser.add_argument(
         "--A",

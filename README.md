@@ -25,7 +25,7 @@ This **minimizes compute** over the **model's entire lifetime** (training + infe
 
 Example use case:
 
-You are planning on pretraining your own model and deploying it at wide scale. You want to ensure you're doing it compute optimally. 
+You are planning on pretraining your own model and deploying it at wide scale. You want to ensure you're doing it compute optimally.
 You should:
 1. Determine the quality of model you want to train, as measured by loss on your training dataset.
 
@@ -40,7 +40,7 @@ You should:
     Excerpt from Output:
     ```shell
     > python compute_optimal.py --loss 1.947 --inference_tokens 2e12
-    > ...
+    ...
     *** (Lifetime) Compute-Optimal Model ***
     ----------------------------------------
     Model Size (params):     2.418e+10
@@ -53,7 +53,7 @@ You should:
 
 Run `python compute_optimal.py --help` for a full list of arguments.
 ### Estimating Inference Demand
-Some tips for estimating lifetime inference demand. 
+Some tips for estimating lifetime inference demand.
 
 Ask yourself the following questions:
 - How long do I expect to serve this model (e.g. 6 months, 1 year) before it is replaced by another?
@@ -66,15 +66,15 @@ This script returns the **minimum cost** to train a model to reach your given qu
 
 This script takes in a model quality (loss), expected inference demand over the model's lifetime, and hardware configuration.
 Inference demand has three components:
-- Number of inference requests
-- Average input tokens per request
-- Average output tokens per request
+- Number of inference requests (`--inference_reqs`)
+- Average input tokens per request (`--input_tok`)
+- Average output tokens per request (`--output_tok`)
 
 The hardware configuration includes:
-- Training and Inference GPU type (A100 or H100)
-- Training and inference GPU cost per hour
-- Training and Inference dtype (FP8, INT8, or BF16)
-- Training, prefill, and decode utilization (MFU).
+- Training and Inference GPU type (A100 or H100) (`--train_gpu_type`, `--inference_gpu_type`)
+- Training and inference GPU cost per hour (`--train_gpu_cost`, `--inference_gpu_cost`)
+- Training and Inference dtype (FP8, INT8, or BF16) (`--train_dtype`, `--inference_dtype`)
+- Training, prefill, and decode utilization (MFU). (`--train_mfu`, `--prefill_mfu`, `--generation_mfu`)
 
 We provide reasonable defaults for the hardware configuration, so these parameters are optional and will default to the ones we have chosen if not provided. Usage of the script is similar to `compute_optimal.py`, but with these extra parameters.
 
@@ -82,7 +82,19 @@ Examples:
 - What is the most cost-effective way to train a model with loss 1.947 and deploy it, assuming I am training on A100-80GBs @ 1.40/hr and running inference on A100-40GBs @ 0.60/hr in INT8. I expect a total of 10B inference requests over the model's lifetime, with each request averaging 1000 input tokens and 250 output tokens. I expect my training utilization (MFU) to be 50%, my prefill utilization to be 40%, and my decode utilization to be 20%.
 
     - ```python
-        python cost_optimal.py --loss 1.947 --inference_reqs 1e10 --input_tok 1000 --output_tok 250 --train_gpu_type A100_80 --train_gpu_cost 1.40 --inference_gpu_type 'A100_40' --inference_dtype int8 --inference_gpu_cost 0.60 --train_mfu 0.5 --prefill_mfu 0.4 --generation_mfu 0.2
+        python cost_optimal.py \
+            --loss 1.947 \
+            --inference_reqs 1e10 \
+            --input_tok 1000 \
+            --output_tok 250 \
+            --train_gpu_type 'A100_80' \
+            --train_gpu_cost 1.40 \
+            --inference_gpu_type 'A100_40' \
+            --inference_dtype int8 \
+            --inference_gpu_cost 0.60 \
+            --train_mfu 0.5 \
+            --prefill_mfu 0.4 \
+            --generation_mfu 0.2
         ```
     - Excerpt from Output:
         ```shell
@@ -124,10 +136,11 @@ If you just want to play around with the Chinchilla scaling laws, use this scrip
 
 ## 4. cost_calculator.py
 A helper script, similar to `model_calculator.py`, except that it also calculates the total cost. In addition to taking in the inputs of `model_calculator.py`, it also allows for hardware configuration inputs:
-- Training and Inference GPU type (A100 or H100)
-- Training and inference GPU cost per hour
-- Training and Inference dtype (FP8, INT8, or BF16)
-- Training, prefill, and decode utilization (MFU).
+- Training and Inference GPU type (A100 or H100) (`--train_gpu_type`, `--inference_gpu_type`)
+- Training and inference GPU cost per hour (`--train_gpu_cost`, `--inference_gpu_cost`)
+- Training and Inference dtype (FP8, INT8, or BF16) (`--train_dtype`, `--inference_dtype`)
+- Training, prefill, and decode utilization (MFU). (`--train_mfu`, `--prefill_mfu`, `--generation_mfu`)
+
 We provide reasonable defaults for the hardware configuration, so these parameters are optional and will default to the ones we have chosen if not provided.
 
 You can also provide the expected inference demand over the model's lifetime to get the lifetime model costs, including inference. Inference demand has three components:
@@ -143,7 +156,16 @@ Example questions you can answer with this script?
 - How much would it cost to train a 30B Chinchilla-optimal model an H100 @ $1.50 per hour, and then run inference on 1 billion requests, with an average of 500 input and 100 output tokens per request on an A100 40GB @ $0.60 per hour?
 
     - ```python
-        python cost_calculator.py --model 30e9 --chinchilla --train_gpu_cost 1.50 --inference_gpu_type 'A100_40' --inference_dtype int8 --inference_gpu_cost 0.60 --input_tok 500 --output_tok 100 --inference_reqs 1e9
+        python cost_calculator.py \
+            --model 30e9 \
+            --chinchilla \
+            --train_gpu_cost 1.50 \
+            --inference_gpu_type 'A100_40' \
+            --inference_dtype int8 \
+            --inference_gpu_cost 0.60 \
+            --input_tok 500 \
+            --output_tok 100 \
+            --inference_reqs 1e9
         ```
     - Output:
     ```python
@@ -164,18 +186,18 @@ Example questions you can answer with this script?
 # Advanced Features
 By default, all scripts in this repo assume the original coefficients from the Chinchilla paper: $\alpha=0.336, \beta=0.283, A=406.4, B=410.7, E=1.69$. These coefficients were determined by a curve-fitting procedure, where the authors fit the Chinchilla equation to data from ~400 empirical training runs. These training runs were all conducted on the same dataset, which is a non-public dataset containing mostly internet text and code.
 
-If your data is very similar to this (or you are just playing around with scaling laws), then you can use the scripts in this repo as-is, with these original coefficients. However, if you have a different training dataset (and most people do), you should use coefficients which are fit to your dataset for better scaling predictions. 
+If your data is very similar to this (or you are just playing around with scaling laws), then you can use the scripts in this repo as-is, with these original coefficients. However, if you have a different training dataset (and most people do), you should use coefficients which are fit to your dataset for better scaling predictions.
 
 To fit coefficients for your data:
 1. Collect empirical training by training many models across many different sizes and training data lengths, collecting final loss values (typically smoothed over the last few batches). This may be expensive, depending on the scales you wish to test.
 2. Fit the coefficients of the Chinchilla formula to this empirical data. We provide our code for this fitting procedure in `huber_optimize.py`. This code is an implementation of the original algorithm from the Chinchilla paper.
     - Example usage: `python huber_optimize.py --data trainingresults.csv`
 
-Once you have your own coefficients, so that the scripts apply better to your dataset, you can pass in: 
-`--alpha`, `--beta`, `--A`, `--B`, and `--E` 
+Once you have your own coefficients, so that the scripts apply better to your dataset, you can pass in:
+`--alpha`, `--beta`, `--A`, `--B`, and `--E`
 to any of the scripts and we will use your coeffients in all our calculations, rather than the original Chinchilla coefficients.
 
-In practice, this means the total FLOPs and total costs we calculate (and therefore the model size and training data length we suggest) change based on the coefficients you provide. It is important that your coefficients be reasonably accurate for your dataset, or else our recommendations ("You should train for a model of 'p' parameters on 'x' tokens to achieve 'l' loss") may not align with your actual results. 
+In practice, this means the total FLOPs and total costs we calculate (and therefore the model size and training data length we suggest) change based on the coefficients you provide. It is important that your coefficients be reasonably accurate for your dataset, or else our recommendations ("You should train for a model of 'p' parameters on 'x' tokens to achieve 'l' loss") may not align with your actual results.
 
 Typically, labs will train a few small models on their dataset and to determine their coefficients, and then extrapolate these scaling curves out to a much larger model. This results in reasonably accurate scaling predictions without a large expense (relative to the training cost of the larger model).
 

@@ -13,7 +13,7 @@ import itertools
 import argparse
 
 
-def huber_loss(params, delta, df):
+def huber_loss(params, delta: float, df: pl.DataFrame) -> float:
     # optimizing over params, df is constant
     (
         alpha,

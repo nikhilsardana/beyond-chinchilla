@@ -35,7 +35,7 @@ def calculate_cost_optimal_model(cost_model: CostModel, T_in, T_out) -> CostMode
     )
     assert (
         approximation_error < 1e-10
-    ), "Approximation failure: Could not approximate training tokens for given T and L."
+    ), f"Approximation failure: Could not approximate training tokens for given Inference demand ({T_in}, {T_out}) and Loss ({cost_model.loss})."
     N_opt = params_from_loss_and_tokens(cost_model.constants, cost_model.loss, D_opt)
     cost_optimal_model = CostModel(
         cost_model.C_tr,
@@ -59,21 +59,21 @@ if __name__ == "__main__":
     default_constants = ChinchillaConstants()
     parser = argparse.ArgumentParser(
         description="""
-                                    Understand the lifetime cost-optimal way to train a model of `args.loss` quality and run `inference_reqs` of inference.
-                                    Use the arguments below to set your expected inference demand, in terms of:
-                                        - average input tokens per request
-                                        - average output tokens per request
-                                        - number of total liftetime inference requests.
-                                    You can also set your hardware configuration (GPU type, inference and training GPU cost per FLOP, MFU for training,
-                                    prefill, and generation).
-                                    This script also returns the total cost to train a model ofo the same quality (and run inference requests) for a model
-                                    trained to its Chinchilla point. It returns the ratios of the "cost-optimal" method and the Chinchilla-"Optimal" method.
-                                    By default, this script is configured to show you the cost-optimal way to train
-                                    a Chinchilla-70B quality model, and then deploy it for 2e12 inference tokens, assuming:
-                                    (a) You are training on H100s @ $2.00/hr in BF16 at 50% MFU
-                                    (b) You are running inference on H100s @ $2.00/hr in FP8 at 50% MFU for prefill, and 1% MFU for generation
-                                    (c) Your requests have an average of 70 input and 215 output tokens.
-                                     """
+            Understand the lifetime cost-optimal way to train a model of `args.loss` quality and run `inference_reqs` of inference.
+            Use the arguments below to set your expected inference demand, in terms of:
+                - average input tokens per request
+                - average output tokens per request
+                - number of total liftetime inference requests.
+            You can also set your hardware configuration (GPU type, inference and training GPU cost per FLOP, MFU for training,
+            prefill, and generation).
+            This script also returns the total cost to train a model ofo the same quality (and run inference requests) for a model
+            trained to its Chinchilla point. It returns the ratios of the "cost-optimal" method and the Chinchilla-"Optimal" method.
+            By default, this script is configured to show you the cost-optimal way to train
+            a Chinchilla-70B quality model, and then deploy it for 2e12 inference tokens, assuming:
+            (a) You are training on H100s @ $2.00/hr in BF16 at 50% MFU
+            (b) You are running inference on H100s @ $2.00/hr in FP8 at 50% MFU for prefill, and 1% MFU for generation
+            (c) Your requests have an average of 70 input and 215 output tokens.
+            """
     )
 
     parser.add_argument(
